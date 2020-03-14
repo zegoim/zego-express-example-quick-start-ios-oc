@@ -21,8 +21,6 @@ static NSString *appSign = <#Fill in your appSign#>;
 
 @interface ViewController () <ZegoEventHandler>
 
-@property (nonatomic, strong) ZegoExpressEngine *engine;
-
 // Log View
 @property (weak, nonatomic) IBOutlet UITextView *logTextView;
 
@@ -33,7 +31,6 @@ static NSString *appSign = <#Fill in your appSign#>;
 // CreateEngine
 @property (nonatomic, assign) BOOL isTestEnv;
 @property (weak, nonatomic) IBOutlet UILabel *appIDLabel;
-@property (weak, nonatomic) IBOutlet UILabel *appSignLabel;
 @property (weak, nonatomic) IBOutlet UILabel *isTestEnvLabel;
 @property (weak, nonatomic) IBOutlet UIButton *createEngineButton;
 
@@ -51,7 +48,6 @@ static NSString *appSign = <#Fill in your appSign#>;
 // PlayStream
 @property (weak, nonatomic) IBOutlet UITextField *playStreamIDTextField;
 @property (weak, nonatomic) IBOutlet UIButton *startPlayingButton;
-
 
 @end
 
@@ -74,10 +70,8 @@ static NSString *appSign = <#Fill in your appSign#>;
 
 - (void)setupUI {
     self.navigationItem.title = @"Quick Start";
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Exit" style:UIBarButtonItemStylePlain target:self action:@selector(exit)];
     
     self.appIDLabel.text = [NSString stringWithFormat:@"AppID: %u", appID];
-    self.appSignLabel.text = [NSString stringWithFormat:@"AppSign: %@", appSign];
     
     self.roomIDLabel.text = [NSString stringWithFormat:@"RoomID: %@", self.roomID];
     self.userIDLabel.text = [NSString stringWithFormat:@"UserID: %@", self.userID];
@@ -88,11 +82,11 @@ static NSString *appSign = <#Fill in your appSign#>;
 
 - (IBAction)createEngineButtonClick:(UIButton *)sender {
     
-    // Create an ZegoExpressEngine and add self as a delegate (ZegoEventHandler)
-    self.engine = [ZegoExpressEngine createEngineWithAppID:appID appSign:appSign isTestEnv:self.isTestEnv scenario:ZegoScenarioGeneral eventHandler:self];
+    // Create ZegoExpressEngine and add self as a delegate (ZegoEventHandler)
+    [ZegoExpressEngine createEngineWithAppID:appID appSign:appSign isTestEnv:self.isTestEnv scenario:ZegoScenarioGeneral eventHandler:self];
     
     // Print log
-    [self appendLog:@" 🚀 Initialize the ZegoExpressEngine"];
+    [self appendLog:@" 🚀 Create ZegoExpressEngine"];
     
     // Add a flag to the button for successful operation
     [self.createEngineButton setTitle:@"✅ CreateEngine" forState:UIControlStateNormal];
@@ -101,62 +95,49 @@ static NSString *appSign = <#Fill in your appSign#>;
 #pragma mark - Step 2: LoginRoom
 
 - (IBAction)loginRoomButtonClick:(UIButton *)sender {
-    if (self.engine) {
-        // Instantiate a ZegoUser object
-        ZegoUser *user = [ZegoUser userWithUserID:self.userID];
-        
-        // Instantiate a ZegoRoomConfig object with the default configuration
-        ZegoRoomConfig *roomConfig = [ZegoRoomConfig defaultConfig];
-        
-        // Login room
-        [self.engine loginRoom:self.roomID user:user config:roomConfig];
-        
-        // Print log
-        [self appendLog:@" 🚪 Start login room"];
-    } else {
-        [self appendLog:@" ‼️ Please initialize the ZegoExpressEngine first"];
-    }
+    // Instantiate a ZegoUser object
+    ZegoUser *user = [ZegoUser userWithUserID:self.userID];
+    
+    // Login room
+    [[ZegoExpressEngine sharedEngine] loginRoom:self.roomID user:user];
+    
+    // Print log
+    [self appendLog:@" 🚪 Start login room"];
 }
 
 #pragma mark - Step 3: StartPublishing
 
 - (IBAction)startPublishingButtonClick:(UIButton *)sender {
-    if (self.engine) {
-        // Instantiate a ZegoCanvas for local preview
-        ZegoCanvas *previewCanvas = [ZegoCanvas canvasWithView:self.localPreviewView viewMode:ZegoViewModeAspectFill];
-        
-        // Start preview
-        [self.engine startPreview:previewCanvas];
-        
-        NSString *publishStreamID = self.publishStreamIDTextField.text;
-        
-        // If streamID is empty @"", SDK will pop up an UIAlertController if "isTestEnv" is set to YES
-        [self.engine startPublishing:publishStreamID];
-        
-        // Print log
-        [self appendLog:@" 📤 Start publishing stream"];
-    } else {
-        [self appendLog:@" ‼️ Please initialize the ZegoExpressEngine first"];
-    }
+    // Instantiate a ZegoCanvas for local preview
+    ZegoCanvas *previewCanvas = [ZegoCanvas canvasWithView:self.localPreviewView];
+    previewCanvas.viewMode = ZegoViewModeAspectFill;
+    
+    // Start preview
+    [[ZegoExpressEngine sharedEngine] startPreview:previewCanvas];
+    
+    NSString *publishStreamID = self.publishStreamIDTextField.text;
+    
+    // If streamID is empty @"", SDK will pop up an UIAlertController if "isTestEnv" is set to YES
+    [[ZegoExpressEngine sharedEngine] startPublishing:publishStreamID];
+    
+    // Print log
+    [self appendLog:@" 📤 Start publishing stream"];
 }
 
 #pragma mark - Step 4: StartPlaying
 
 - (IBAction)startPlayingButtonClick:(UIButton *)sender {
-    if (self.engine) {
-        // Instantiate a ZegoCanvas for local preview
-        ZegoCanvas *playCanvas = [ZegoCanvas canvasWithView:self.remotePlayView viewMode:ZegoViewModeAspectFill];
-        
-        NSString *playStreamID = self.playStreamIDTextField.text;
-        
-        // If streamID is empty @"", SDK will pop up an UIAlertController if "isTestEnv" is set to YES
-        [self.engine startPlayingStream:playStreamID canvas:playCanvas];
-        
-        // Print log
-        [self appendLog:@" 📥 Strat playing stream"];
-    } else {
-        [self appendLog:@" ‼️ Please initialize the ZegoExpressEngine first"];
-    }
+    // Instantiate a ZegoCanvas for local preview
+    ZegoCanvas *playCanvas = [ZegoCanvas canvasWithView:self.remotePlayView];
+    playCanvas.viewMode = ZegoViewModeAspectFill;
+    
+    NSString *playStreamID = self.playStreamIDTextField.text;
+    
+    // If streamID is empty @"", SDK will pop up an UIAlertController if "isTestEnv" is set to YES
+    [[ZegoExpressEngine sharedEngine] startPlayingStream:playStreamID canvas:playCanvas];
+    
+    // Print log
+    [self appendLog:@" 📥 Strat playing stream"];
 }
 
 #pragma mark - Exit
@@ -165,34 +146,40 @@ static NSString *appSign = <#Fill in your appSign#>;
     if (self.isBeingDismissed || self.isMovingFromParentViewController
         || (self.navigationController && self.navigationController.isBeingDismissed)) {
         
-        // Logout room before exiting
-        [self.engine logoutRoom:self.roomID];
-        
-        // Can destroy the engine when you don't need audio and video calls
-        [ZegoExpressEngine destroyEngine];
+            // Logout room will automatically stop publishing/playing stream.
+        //    [[ZegoExpressEngine sharedEngine] logoutRoom:self.roomID];
+                    
+            // Can destroy the engine when you don't need audio and video calls
+            //
+            // Destroy engine will automatically logout room and stop publishing/playing stream.
+            [ZegoExpressEngine destroyEngine:nil];
     }
     [super viewDidDisappear:animated];
 }
 
-- (void)exit {
-    // Logout room before exiting
-    [self.engine logoutRoom:self.roomID];
-    
-    // Can destroy the engine when you don't need audio and video calls
-    [ZegoExpressEngine destroyEngine];
-    
+- (IBAction)destroyEngineButtonClick:(UIButton *)sender {
     [self.createEngineButton setTitle:@"CreateEngine" forState:UIControlStateNormal];
     [self.loginRoomButton setTitle:@"LoginRoom" forState:UIControlStateNormal];
     [self.startPublishingButton setTitle:@"StartPublishing" forState:UIControlStateNormal];
     [self.startPlayingButton setTitle:@"StartPlaying" forState:UIControlStateNormal];
     
-    self.logTextView.text = @"";
+    // Logout room will automatically stop publishing/playing stream.
+//    [[ZegoExpressEngine sharedEngine] logoutRoom:self.roomID];
+    
+    // Can destroy the engine when you don't need audio and video calls
+    //
+    // Destroy engine will automatically logout room and stop publishing/playing stream.
+    [ZegoExpressEngine destroyEngine:nil];
+    
+    // Print log
+    [self appendLog:@" 🏳️ Destroy ZegoExpressEngine"];
 }
+
 
 #pragma mark - ZegoEventHandler Delegate
 
 /// Room status change notification
-- (void)onRoomStateUpdate:(ZegoRoomState)state errorCode:(int)errorCode room:(NSString *)roomID {
+- (void)onRoomStateUpdate:(ZegoRoomState)state errorCode:(int)errorCode extendedData:(NSDictionary *)extendedData roomID:(NSString *)roomID {
     if (state == ZegoRoomStateConnected && errorCode == 0) {
         [self appendLog:@" 🚩 🚪 Login room success"];
         
@@ -208,7 +195,7 @@ static NSString *appSign = <#Fill in your appSign#>;
 }
 
 /// Publish stream state callback
-- (void)onPublisherStateUpdate:(ZegoPublisherState)state errorCode:(int)errorCode stream:(NSString *)streamID {
+- (void)onPublisherStateUpdate:(ZegoPublisherState)state errorCode:(int)errorCode extendedData:(NSDictionary *)extendedData streamID:(NSString *)streamID {
     if (state == ZegoPublisherStatePublishing && errorCode == 0) {
         [self appendLog:@" 🚩 📤 Publishing stream success"];
         
@@ -224,7 +211,7 @@ static NSString *appSign = <#Fill in your appSign#>;
 }
 
 /// Play stream state callback
-- (void)onPlayerStateUpdate:(ZegoPlayerState)state errorCode:(int)errorCode stream:(NSString *)streamID {
+- (void)onPlayerStateUpdate:(ZegoPlayerState)state errorCode:(int)errorCode extendedData:(NSDictionary *)extendedData streamID:(NSString *)streamID {
     if (state == ZegoPlayerStatePlaying && errorCode == 0) {
         [self appendLog:@" 🚩 📥 Playing stream success"];
         
@@ -238,8 +225,6 @@ static NSString *appSign = <#Fill in your appSign#>;
         [self.startPlayingButton setTitle:@"❌ StartPlaying" forState:UIControlStateNormal];
     }
 }
-
-
 
 #pragma mark - Helper Methods
 

@@ -1,6 +1,6 @@
 # zego-express-example-quick-start-ios-oc
 
-zego express example quick start for ios developer.
+Zego Express Example Quick Start for iOS developer.
 
 > This quick start project only demonstrates how to implement the simplest publishing/playing stream function.
 
